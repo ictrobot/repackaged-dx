@@ -1,0 +1,66 @@
+apply plugin: 'maven-publish'
+apply plugin: 'java'
+
+sourceCompatibility = 1.7
+
+sourceSets.main.java.srcDirs = ["dalvik/dx/src/", "libcore/dex/src/main/java"]
+version = '7.1.2_r33'
+
+ext {
+    localProperties = new Properties()
+    if (file("build.properties").exists()) {
+        file("build.properties").withReader { reader ->
+            localProperties.load(reader)
+        }
+    }
+    if (localProperties.MAVEN_REPO_PATH == null) localProperties.MAVEN_REPO_PATH = getRootProject().getProjectDir().absolutePath + "/repo/"
+    if (localProperties.MAVEN_REPO_USERNAME == null) localProperties.MAVEN_REPO_USERNAME = ""
+    if (localProperties.MAVEN_REPO_PASSWORD == null) localProperties.MAVEN_REPO_PASSWORD = ""
+}
+
+repositories {
+    
+}
+
+dependencies {
+    
+}
+
+task sourceJar(type: Jar, dependsOn: classes) {
+    from sourceSets.main.allSource
+	exclude "*.mk"
+	
+    classifier = 'sources'
+	
+	from("dalvik/dx/") {
+		include "NOTICE"
+	}
+}
+
+jar {
+	from("dalvik/dx/") {
+		include "NOTICE"
+		rename "NOTICE", "NOTICE-DX"
+	}
+}
+
+publishing {
+    publications {
+        jar(MavenPublication) {
+            artifact tasks.jar
+            artifact tasks.sourceJar
+            groupId 'ethanjones.repackaged.android'
+            artifactId 'dx'
+            version version
+        }
+    }
+    repositories {
+        maven {
+            url localProperties.MAVEN_REPO_PATH + "releases"
+            credentials {
+                username localProperties.MAVEN_REPO_USERNAME
+                password localProperties.MAVEN_REPO_PASSWORD
+            }
+        }
+    }
+}
